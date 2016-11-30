@@ -1,0 +1,6 @@
+[submodule "extern/asm8080"]
+	path = extern/asm8080
+	url = https://github.com/begoon/asm8080
+[submodule "extern/tlvm"]
+	path = extern/tlvm
+	url = https://github.com/nistur/tlvm
