@@ -7,4 +7,4 @@ RAM             EQU 0800H       ; Volatile memory location to be used as genral 
 STACK           EQU 1000H       ; Memory to be used as 8080's stack
 NEGTAPE         EQU 0010H       ; How many cells prior to the start of the tape to initialise
 TAPE            EQU RAM+NEGTAPE
-MAXSIZE         EQU 0100H       ; Maximum size of a BF program
+MAXSIZE         EQU 00FFH       ; Maximum size of a BF program

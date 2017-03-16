@@ -1,6 +1,7 @@
 #!/bin/bash
 
 ASMFILE="bfc.asm"
+BFFILE="hello.asm"
 
 PROJDIR=$(pwd)
 EXTERN=${PROJDIR}/extern
@@ -12,4 +13,4 @@ TLVMDIR=${EXTERN}/tlvm
 
 cd ${PROJDIR}
 ${ASM} ${ASMFILE}
-${ASM} "hello.asm"
+${ASM} ${BFFILE}

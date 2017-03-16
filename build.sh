@@ -1,6 +1,7 @@
 #!/bin/bash
 
-ASMFILE="bf.asm"
+ASMFILE="bfc.asm"
+BFFILE="hello.asm"
 
 PROJDIR=$(pwd)
 EXTERN=${PROJDIR}/extern
@@ -21,4 +22,5 @@ make
 
 cd ${PROJDIR}
 ${ASM} ${ASMFILE}
+${ASM} ${BFFILE}
 
