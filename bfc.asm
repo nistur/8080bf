@@ -44,10 +44,10 @@ COMPILE:
 COPY:                           ; Copy from HL to DE with size A
                                 ; Note: No registers will be preserved 
         PUSH PSW
-        MOV M,A
+        MOV A,M
         INX H
         XCHG
-        MOV A,M
+        MOV M,A
         INX H
         XCHG
         POP PSW
@@ -152,28 +152,31 @@ LOOPEND:
         LHLD    LOOPSTACK
         DCX     H                   ;REDUCE LOOPSTACK TO LOOK AT PREVIOUS ENTRY
         DCX     H
-        SHLD    LOOPSTACK
+        SHLD    LOOPSTACK           ;Save LOOPSTACK with the previous entry
         MOV     D,M
         INX     H
         MOV     E,M
+
         XCHG                        ;SWITCH TO USING THE ADDRESS WE JUST LOADED
 
         POP     D
+	
+	
         ;; At this stage, we're all set, apart from that the address we have in DE
         ;; Is pointing to the location in the compilation space, so it needs to
         ;; be changed to be relative to the location it will be in future
 
-        PUSH H
-        LXI H,RETARGET
-        PUSH PSW
-        MOV A,E
-        SUB L
-        MOV E,A
-        MOV A,D
-        SBB H
-        MOV D,A
-        POP PSW
-        POP H
+         PUSH H
+         PUSH PSW
+         LXI H,RETARGET
+;;          MOV A,E
+;;           SUB H
+;;   	MOV E,A
+;;         MOV A,E
+;;         SBB L
+;;         MOV E,A
+         POP PSW
+         POP H
         
         DCX     H
         MOV     M,E
@@ -185,18 +188,18 @@ LOOPEND:
         INX     B  
     
         XCHG
-        ;; Similar to DE above, BC here needs to be retargetted
-        PUSH H
-        LXI H,RETARGET
-        PUSH PSW
-        MOV A,C
-        SUB L
-        MOV C,A
-        MOV A,B
-        SBB H
-        MOV B,A
-        POP PSW
-        POP H
+;;         ;;Similar to DE above, BC here needs to be retargetted to the final location
+;;         PUSH H
+;;         LXI H,RETARGET
+;;         PUSH PSW
+;;         MOV A,C
+;;         SUB L
+;;         MOV C,A
+;;         MOV A,B
+;;         SBB H
+;;         MOV B,A
+;;         POP PSW
+;;         POP H
         
         MVI     M,0AFH              ;XRA A
         INX     H
@@ -215,9 +218,9 @@ OUT:
         XCHG
         MVI     M,07EH              ;MVI A,M
         INX     H
-        MVI     H,0D3H              ;OUT
+        MVI     M,0D3H              ;OUT
         INX     H
-        MVI     H,0H
+        MVI     M,0H
         INX     H
         XCHG
         RET
@@ -225,11 +228,11 @@ OUT:
 
 IN:
         XCHG
-        MVI H,0DBH              ; IN
+        MVI M,0DBH              ; IN
         INX H
-        MVI H,0H
+        MVI M,0H
         INX H
-        MVI H,077H              ; MOV M,A
+        MVI M,077H              ; MOV M,A
         INX H
         XCHG
         RET
