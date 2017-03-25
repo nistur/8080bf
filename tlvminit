@@ -1,5 +1,5 @@
-file bfc.bin 0
-file hello.bin 0x100
+file bin/bfc.bin 0
+file bin/hello.bin 0x100
 memory 0x200 4096
 b 0x3D
 r

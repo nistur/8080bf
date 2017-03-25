@@ -1,7 +1,10 @@
 #!/bin/bash
 
-ASMFILE="bfc.asm"
-BFFILE="hello.asm"
+SRCDIR="src/"
+BINDIR="bin/"
+
+ASMFILE="bfc"
+BFFILE="hello"
 
 PROJDIR=$(pwd)
 EXTERN=${PROJDIR}/extern
@@ -21,6 +24,11 @@ premake5 gmake
 make
 
 cd ${PROJDIR}
-${ASM} ${ASMFILE}
-${ASM} ${BFFILE}
+
+if [ ! -d ${BINDIR} ]; then
+    mkdir ${BINDIR}
+fi
+
+${ASM} ${SRCDIR}${ASMFILE}.asm -I${SRCDIR} -o${BINDIR}${ASMFILE}
+${ASM} ${SRCDIR}${BFFILE}.asm -I${SRCDIR} -o${BINDIR}${BFFILE}
 
