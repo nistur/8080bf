@@ -13,7 +13,7 @@ LOOPSTACK       EQU RAM+0000H        ; Location of temporary stack for storing J
 RETARGET        EQU OUTPUT-BFSTART
 
         
-COMPILECHECK    EQU 01FFH
+COMPILECHECK    EQU BFSTART+MAXSIZE
 
 RUN:    
         LXI H,STACK
@@ -34,27 +34,24 @@ COMPILE:
         CALL COMPILELOOP           ; Loop over the code until it's done compiling
         LXI H,OUTPUT
         LXI D,BFSTART
-        MVI A,MAXSIZE
-        CALL COPY
-                                ; the BF source     
-        LXI H,BFSTART+COMPILECHECK ; Flag this code as being compiled
-        MVI M,0FFH
-        JMP BFSTART
-        
-COPY:                           ; Copy from HL to DE with size A
-                                ; Note: No registers will be preserved 
-        PUSH PSW
-        MOV A,M
+        LXI B,MAXSIZE
+
+COPY:	MOV A,M
         INX H
         XCHG
         MOV M,A
         INX H
         XCHG
-        POP PSW
-        DCR A
+        DCX B
+	XRA A
+	ADD B
+	ADD C
         JNZ COPY
-        RET
-
+                        ; the BF source     
+RUNBF:	LXI H,BFSTART+COMPILECHECK ; Flag this code as being compiled
+        MVI M,0FFH
+        JMP BFSTART
+        
 COMPILELOOP:                    ;PARSE THE KNOWN BF SYMBOLS -+<>[],.
         MVI     A,2DH               ;-
         SUB     M
@@ -179,9 +176,9 @@ LOOPEND:
         POP H
         
         DCX     H
-        MOV     M,E
-        DCX     H
         MOV     M,D
+        DCX     H
+        MOV     M,E
 	POP D 			;get back the un-retargetted address, as we'll need it
         XTHL
         POP     B
@@ -208,9 +205,9 @@ LOOPEND:
         INX     H
         MVI     M,0C2H              ;JNZ
         INX     H
-        MOV     M,B                 ;THE LOCATION WE JUST GOT FROM THE STACK
+        MOV     M,C                 ;THE LOCATION WE JUST GOT FROM THE STACK
         INX     H
-        MOV     M,C
+        MOV     M,B
 	INX 	H
 	
         XCHG
@@ -230,11 +227,11 @@ OUT:
 
 IN:
         XCHG
-;;         MVI M,0DBH              ; IN
-;;         INX H
-;;         MVI M,0H
-;;         INX H
-;;         MVI M,077H              ; MOV M,A
-;;         INX H
+        MVI M,0DBH              ; IN
+        INX H
+        MVI M,0H
+        INX H
+	MVI M,077H              ; MOV M,A
+        INX H
         XCHG
         RET

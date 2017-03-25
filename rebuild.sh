@@ -4,7 +4,7 @@ SRCDIR="src/"
 BINDIR="bin/"
 
 ASMFILE="bfc"
-BFFILE="hello"
+BFFILE="hello2"
 
 PROJDIR=$(pwd)
 EXTERN=${PROJDIR}/extern
