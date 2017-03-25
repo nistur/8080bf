@@ -165,23 +165,24 @@ LOOPEND:
         ;; At this stage, we're all set, apart from that the address we have in DE
         ;; Is pointing to the location in the compilation space, so it needs to
         ;; be changed to be relative to the location it will be in future
-
-         PUSH H
-         PUSH PSW
-         LXI H,RETARGET
-;;          MOV A,E
-;;           SUB H
-;;   	MOV E,A
-;;         MOV A,E
-;;         SBB L
-;;         MOV E,A
-         POP PSW
-         POP H
+	PUSH D			;We also need to store this as we'll need it again
+        PUSH H
+        PUSH PSW
+        LXI H,RETARGET
+        MOV A,E
+	SUB L
+    	MOV E,A
+	MOV A,D
+	SBB H
+        MOV D,A
+        POP PSW
+        POP H
         
         DCX     H
         MOV     M,E
         DCX     H
         MOV     M,D
+	POP D 			;get back the un-retargetted address, as we'll need it
         XTHL
         POP     B
         INX     B
@@ -189,17 +190,17 @@ LOOPEND:
     
         XCHG
 ;;         ;;Similar to DE above, BC here needs to be retargetted to the final location
-;;         PUSH H
-;;         LXI H,RETARGET
-;;         PUSH PSW
-;;         MOV A,C
-;;         SUB L
-;;         MOV C,A
-;;         MOV A,B
-;;         SBB H
-;;         MOV B,A
-;;         POP PSW
-;;         POP H
+         PUSH H
+         PUSH PSW
+         LXI H,RETARGET
+         MOV A,C
+         SUB L
+         MOV C,A
+         MOV A,B
+         SBB H
+         MOV B,A
+         POP PSW
+         POP H
         
         MVI     M,0AFH              ;XRA A
         INX     H
@@ -210,7 +211,8 @@ LOOPEND:
         MOV     M,B                 ;THE LOCATION WE JUST GOT FROM THE STACK
         INX     H
         MOV     M,C
-
+	INX 	H
+	
         XCHG
         RET
 
@@ -228,11 +230,11 @@ OUT:
 
 IN:
         XCHG
-        MVI M,0DBH              ; IN
-        INX H
-        MVI M,0H
-        INX H
-        MVI M,077H              ; MOV M,A
-        INX H
+;;         MVI M,0DBH              ; IN
+;;         INX H
+;;         MVI M,0H
+;;         INX H
+;;         MVI M,077H              ; MOV M,A
+;;         INX H
         XCHG
         RET
