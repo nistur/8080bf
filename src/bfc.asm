@@ -2,13 +2,13 @@
 
                 ORG START
         
-LOOPSTACKOFFSET EQU 0080H                               ; Offset in RAM of the JMP target stack
-LOOPSTACKSIZE   EQU 0030H                               ; Size of the JMP target stack
-OUTPUTOFFSET    EQU LOOPSTACKOFFSET+LOOPSTACKSIZE       ; Offset in RAM of the compiled output
+LOOPSTACKOFFSET EQU 0080H               ;OFFSET IN RAM OF THE JMP TARGET STACK
+LOOPSTACKSIZE   EQU 0030H               ;SIZE OF THE JMP TARGET STACK
+OUTPUTOFFSET    EQU LOOPSTACKOFFSET+LOOPSTACKSIZE ;OFFSET IN RAM OF THE COMPILED OUTPUT
 
-OUTPUT          EQU RAM+OUTPUTOFFSET ; Location of the compiled output
-LOOPSTACK       EQU RAM+0000H        ; Location of temporary stack for storing JMP targets
-                                     ; [] loops 
+OUTPUT          EQU RAM+OUTPUTOFFSET    ;LOCATION OF THE COMPILED OUTPUT
+LOOPSTACK       EQU RAM+0000H           ;LOCATION OF TEMPORARY STACK FOR STORING JMP TARGETS
+                                        ;[] LOOPS
 
 RETARGET        EQU OUTPUT-BFSTART
 
@@ -16,101 +16,170 @@ RETARGET        EQU OUTPUT-BFSTART
 COMPILECHECK    EQU BFSTART+MAXSIZE
 
 RUN:    
-        LXI H,STACK
+        LXI     H,STACK
         SPHL
-        XRA A
-        LXI H,BFSTART+COMPILECHECK
-        ADD M
-        JNZ BFSTART
+        XRA     A                       ;ZERO ACCUMULATOR THEN 
+        LXI     H,BFSTART+COMPILECHECK  ;CHECK THAT THE LAST BYTE IN THE SECTION FOR  
+        ADD     M                       ;BF CODE IS NON-NULL, MARKING IT AS ALREADY
+        JNZ     BFSTART                 ;COMPILED, IN WHICH CASE, EXECUTE IT
         
 COMPILE:        
-        LXI H,LOOPSTACK
-        LXI D,LOOPSTACK+2
-        MOV M,E
-        INX H
-        MOV M,D
-        LXI H,BFSTART
-        LXI D,OUTPUT
-        CALL COMPILELOOP           ; Loop over the code until it's done compiling
-        LXI H,OUTPUT
-        LXI D,BFSTART
-        LXI B,MAXSIZE
+        LXI     H,LOOPSTACK
+        LXI     D,LOOPSTACK+2
+        MOV     M,E
+        INX     H
+        MOV     M,D
+        LXI     H,BFSTART
+        LXI     D,OUTPUT
+        CALL    COMPILELOOP           ; Loop over the code until it's done compiling
+        LXI     H,OUTPUT
+        LXI     D,BFSTART
+        LXI     B,MAXSIZE
 
-COPY:	MOV A,M
-	MVI M,0H
-        INX H
+COPY:   MOV     A,M
+        MVI     M,0H
+        INX     H
         XCHG
-        MOV M,A
-        INX H
+        MOV     M,A
+        INX     H
         XCHG
-        DCX B
-	XRA A
-	ADD B
-	ADD C
-        JNZ COPY
+        DCX     B
+        XRA     A
+        ADD     B
+        ADD     C
+        JNZ     COPY
                         ; the BF source     
-RUNBF:	LXI H,BFSTART+COMPILECHECK ; Flag this code as being compiled
-        MVI M,0FFH
-	LXI H,TAPE
-        JMP BFSTART
+RUNBF:  LXI     H,BFSTART+COMPILECHECK ; Flag this code as being compiled
+        MVI     M,0FFH
+        LXI     H,TAPE
+        JMP     BFSTART
         
-COMPILELOOP:                    ;PARSE THE KNOWN BF SYMBOLS -+<>[],.
-DEC:	MVI     A,2DH               ;-
+COMPILELOOP:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; PARSE THE KNOWN SYMBOLS: - + < > [ ] , . $                                   ;;
+;;                                                                              ;;
+;; HL - LOCATION OF NEXT BF SYMBOL                                              ;;
+;; DE - LOCATION OF NEXT OUTPUT                                                 ;;
+;;                                                                              ;; 
+;; GENERALLY THIS IS DONE AS FOLLOWS:                                           ;;
+;; SET A TO VALUE WE'RE CHECKING                                                ;;
+;; SUBTRACT CURRENT SYMBOL                                                      ;;
+;; IF NOT ZERO, THE SYMBOL DOES NOT MATCH SO SKIP TO THE NEXT CHECK             ;;
+;; OTHERWISE OUTPUT THE RELEVANT MACHINE CODE                                   ;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+DEC:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: -                               (2DH)                                ;;
+;; ACTION: DECREMENT VALUE IN CURRENT CELL                                      ;;
+;; OUTPUT: DCR M                           (35H)                                ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,2DH
         SUB     M
-        JNZ   	INC
+        JNZ     INC
         XCHG
-        MVI     M,35H   ;DCR M
+        MVI     M,35H
         INX     H
         XCHG
 
-INC:	MVI     A,2BH               ;+
+INC:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: +                               (2BH)                                ;;
+;; ACTION: INCREMENT VALUE IN CURRENT CELL                                      ;;
+;; OUTPUT: INR M                           (34H)                                ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,2BH
         SUB     M
-        JNZ     LEFT2
+        JNZ     LEFT
         XCHG
-        MVI     M,34H               ;INR M
+        MVI     M,34H
         INX     H
         XCHG
 
-LEFT2:	MVI     A,3CH               ;<
+LEFT:   
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: <                               (3CH)                                ;;
+;; ACTION: MOVE LEFT TO PREVIOUS CELL                                           ;;
+;; OUTPUT: DCX H                           (3BH)                                ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,3CH
         SUB     M
-        JNZ     RIGHT2
+        JNZ     RIGHT
         XCHG
-        MVI     M,2BH               ;DCX H
+        MVI     M,2BH
         INX     H
         XCHG
 
-RIGHT2:	MVI     A,3EH               ;>
+RIGHT:
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: >                               (3EH)                                ;;
+;; ACTION: MOVE RIGHT TO NEXT CELL                                              ;;
+;; OUTPUT: INX H                           (23H)                                ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,3EH               ;>
         SUB     M
-        JNZ     LOOP
+        JNZ     OUT
         XCHG
         MVI     M,23H               ;INX H
         INX     H
         XCHG
 
-LOOP:	MVI     A,5BH               ;[
-	SUB     M
-	CZ      LOOPSTART
+OUT:    
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: .                               (2EH)                                ;;
+;; ACTION: OUTPUT CURRENT CELL                                                  ;;
+;; OUTPUT: MOV A,M                         (7EH)                                ;;
+;;         OUT 0                           (D3H 00H)                            ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,2EH
+        SUB     M
+        JNZ     IN
+        XCHG
+        MVI     M,07EH
+        INX     H
+        MVI     M,0D3H
+        INX     H
+        MVI     M,0H
+        INX     H
+        XCHG
+
+IN:     
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; SYMBOL: ,                               (2CH)                                ;;
+;; ACTION: READ INPUT TO CURRENT CELL                                           ;;
+;; OUTPUT: IN 0                           (DBH 00H)                             ;; 
+;;         MOV M,A                        (77H)                                 ;; 
+;; NOTE: COMMENTED OUT AS IT'S UNUSED, TO SAVE SPACE                            ;; 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+        MVI     A,2CH
+        SUB     M
+        JNZ     LOOP
+;;        XCHG
+;;        MVI     M,0DBH              ; IN
+;;        INX     H
+;;        MVI     M,0H
+;;        INX     H
+;;        MVI     M,077H              ; MOV M,A
+;;        INX     H
+;;        XCHG
+
+
+LOOP:   MVI     A,5BH               ;[
+        SUB     M
+        CZ      LOOPSTART
 
 ENDLOOP:MVI     A,5DH               ;]
-	SUB     M
-	CZ      LOOPEND
-
-OUT2:	MVI     A,2EH               ;.
-	SUB     M
-	CZ      OUT
-
-IN2:	MVI A,2CH
-        SUB M
-        CZ IN
+        SUB     M
+        CZ      LOOPEND
         
         MVI     A,24H               ;$ - MARKS EOF
         SUB     M
-        JNZ	CONTINUE
-	XCHG
-	MVI M,76H
-	INX H
-	XCHG
-	RET
+        JNZ     CONTINUE
+        XCHG
+        MVI M,76H
+        INX H
+        XCHG
+        RET
         
 CONTINUE:
         INX     H
@@ -156,20 +225,20 @@ LOOPEND:
         XCHG                        ;SWITCH TO USING THE ADDRESS WE JUST LOADED
 
         POP     D
-	
-	
+        
+        
         ;; At this stage, we're all set, apart from that the address we have in DE
         ;; Is pointing to the location in the compilation space, so it needs to
         ;; be changed to be relative to the location it will be in future
-	PUSH D			;We also need to store this as we'll need it again
+        PUSH D                  ;We also need to store this as we'll need it again
         PUSH H
         PUSH PSW
         LXI H,RETARGET
         MOV A,E
-	SUB L
-    	MOV E,A
-	MOV A,D
-	SBB H
+        SUB L
+        MOV E,A
+        MOV A,D
+        SBB H
         MOV D,A
         POP PSW
         POP H
@@ -178,7 +247,7 @@ LOOPEND:
         MOV     M,D
         DCX     H
         MOV     M,E
-	POP D 			;get back the un-retargetted address, as we'll need it
+        POP D                   ;get back the un-retargetted address, as we'll need it
         XTHL
         POP     B
         INX     B
@@ -207,30 +276,7 @@ LOOPEND:
         MOV     M,C                 ;THE LOCATION WE JUST GOT FROM THE STACK
         INX     H
         MOV     M,B
-	INX 	H
-	
-        XCHG
-        RET
-
-OUT:
-        XCHG
-        MVI     M,07EH              ;MVI A,M
         INX     H
-        MVI     M,0D3H              ;OUT
-        INX     H
-        MVI     M,0H
-        INX     H
+        
         XCHG
-        RET
-
-
-IN:
-;;         XCHG
-;;         MVI M,0DBH              ; IN
-;;         INX H
-;;         MVI M,0H
-;;         INX H
-;; 	MVI M,077H              ; MOV M,A
-;;         INX H
-;;         XCHG
         RET

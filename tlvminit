@@ -1,4 +1,4 @@
 file bin/bfc.bin 0
 file bin/hello2.bin 0x100
 memory 0x200 4096
-
+i 0 0 1
