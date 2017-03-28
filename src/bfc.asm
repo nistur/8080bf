@@ -21,7 +21,7 @@ RUN:
         XRA     A                       ;ZERO ACCUMULATOR THEN 
         LXI     H,BFSTART+COMPILECHECK  ;CHECK THAT THE LAST BYTE IN THE SECTION FOR  
         ADD     M                       ;BF CODE IS NON-NULL, MARKING IT AS ALREADY
-        JNZ     BFSTART                 ;COMPILED, IN WHICH CASE, EXECUTE IT
+        JNZ     RUNBF                   ;COMPILED, IN WHICH CASE, EXECUTE IT
         
 COMPILE:        
         LXI     H,LOOPSTACK
@@ -31,29 +31,7 @@ COMPILE:
         MOV     M,D
         LXI     H,BFSTART
         LXI     D,OUTPUT
-        CALL    COMPILELOOP           ; Loop over the code until it's done compiling
-        LXI     H,OUTPUT
-        LXI     D,BFSTART
-        LXI     B,MAXSIZE
 
-COPY:   MOV     A,M
-        MVI     M,0H
-        INX     H
-        XCHG
-        MOV     M,A
-        INX     H
-        XCHG
-        DCX     B
-        XRA     A
-        ADD     B
-        ADD     C
-        JNZ     COPY
-                        ; the BF source     
-RUNBF:  LXI     H,BFSTART+COMPILECHECK ; Flag this code as being compiled
-        MVI     M,0FFH
-        LXI     H,TAPE
-        JMP     BFSTART
-        
 COMPILELOOP:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; PARSE THE KNOWN SYMBOLS: - + < > [ ] , . $                                   ;;
@@ -149,17 +127,17 @@ IN:
 ;; ACTION: READ INPUT TO CURRENT CELL                                           ;;
 ;; OUTPUT: IN 0                           (DBH 00H)                             ;; 
 ;;         MOV M,A                        (77H)                                 ;; 
-;; NOTE: COMMENTED OUT AS IT'S UNUSED, TO SAVE SPACE                            ;; 
+;; NOTE: COMMENTED OUT AS IT'S UNUSED, TO SAVE SPACE (11 BYTES)                 ;; 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
         MVI     A,2CH
         SUB     M
         JNZ     LOOP
 ;;        XCHG
-;;        MVI     M,0DBH              ; IN
+;;        MVI     M,0DBH
 ;;        INX     H
 ;;        MVI     M,0H
 ;;        INX     H
-;;        MVI     M,077H              ; MOV M,A
+;;        MVI     M,077H
 ;;        INX     H
 ;;        XCHG
 
@@ -174,17 +152,44 @@ ENDLOOP:MVI     A,5DH               ;]
         
         MVI     A,24H               ;$ - MARKS EOF
         SUB     M
-        JNZ     CONTINUE
-        XCHG
-        MVI M,76H
-        INX H
-        XCHG
-        RET
-        
+        JZ      END
 CONTINUE:
         INX     H
         JMP     COMPILELOOP
 
+END:	XCHG
+        MVI M,76H
+        INX H
+        XCHG
+        
+        LXI     H,OUTPUT
+        LXI     D,BFSTART
+        LXI     B,MAXSIZE
+
+RELOCATE:
+	MOV     A,M
+        MVI     M,0H
+        INX     H
+        XCHG
+        MOV     M,A
+        INX     H
+        XCHG
+        DCX     B
+        XRA     A
+        ADD     B
+        ADD     C
+        JNZ     RELOCATE
+                        ; the BF source     
+RUNBF:  LXI     H,BFSTART+COMPILECHECK ; Flag this code as being compiled
+        MVI     M,0FFH
+        LXI     H,TAPE+TAPELENGTH;
+        MVI     A,TAPELENGTH
+CLEAR:  MVI     M,0H
+        DCX     H
+        DCR     A
+        JNZ     CLEAR
+        JMP     BFSTART
+        
 LOOPSTART:
         XCHG
         MVI     M,0C3H              ;JMP
