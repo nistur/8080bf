@@ -37,6 +37,7 @@ COMPILE:
         LXI B,MAXSIZE
 
 COPY:	MOV A,M
+	MVI M,0H
         INX H
         XCHG
         MOV M,A
@@ -50,73 +51,71 @@ COPY:	MOV A,M
                         ; the BF source     
 RUNBF:	LXI H,BFSTART+COMPILECHECK ; Flag this code as being compiled
         MVI M,0FFH
+	LXI H,TAPE
         JMP BFSTART
         
 COMPILELOOP:                    ;PARSE THE KNOWN BF SYMBOLS -+<>[],.
-        MVI     A,2DH               ;-
+DEC:	MVI     A,2DH               ;-
         SUB     M
-        CZ      DEC
+        JNZ   	INC
+        XCHG
+        MVI     M,35H   ;DCR M
+        INX     H
+        XCHG
 
-        MVI     A,2BH               ;+
+INC:	MVI     A,2BH               ;+
         SUB     M
-        CZ      INR
+        JNZ     LEFT2
+        XCHG
+        MVI     M,34H               ;INR M
+        INX     H
+        XCHG
 
-        MVI     A,3CH               ;<
+LEFT2:	MVI     A,3CH               ;<
         SUB     M
-        CZ      LEFT
+        JNZ     RIGHT2
+        XCHG
+        MVI     M,2BH               ;DCX H
+        INX     H
+        XCHG
 
-        MVI     A,3EH               ;>
+RIGHT2:	MVI     A,3EH               ;>
         SUB     M
-        CZ      RIGHT
+        JNZ     LOOP
+        XCHG
+        MVI     M,23H               ;INX H
+        INX     H
+        XCHG
 
-	MVI     A,5BH               ;[
+LOOP:	MVI     A,5BH               ;[
 	SUB     M
 	CZ      LOOPSTART
 
-	MVI     A,5DH               ;]
+ENDLOOP:MVI     A,5DH               ;]
 	SUB     M
 	CZ      LOOPEND
 
-	MVI     A,2EH               ;.
+OUT2:	MVI     A,2EH               ;.
 	SUB     M
 	CZ      OUT
 
-        MVI A,2CH
+IN2:	MVI A,2CH
         SUB M
         CZ IN
         
         MVI     A,24H               ;$ - MARKS EOF
         SUB     M
-        RZ
+        JNZ	CONTINUE
+	XCHG
+	MVI M,76H
+	INX H
+	XCHG
+	RET
         
 CONTINUE:
         INX     H
         JMP     COMPILELOOP
 
-DEC:                            ;-
-        XCHG
-        MVI     M,35H   ;DCR M
-        INX     H
-        XCHG
-        RET
-INR:                            ;+
-        XCHG
-        MVI     M,34H               ;INR M
-        INX     H
-        XCHG
-        RET
-LEFT:                           ;<
-        XCHG
-        MVI     M,2BH               ;DCX H
-        INX     H
-        XCHG
-        RET
-RIGHT:                          ;>
-        XCHG
-        MVI     M,23H               ;INX H
-        INX     H
-        XCHG
-        RET
 LOOPSTART:
         XCHG
         MVI     M,0C3H              ;JMP
@@ -226,12 +225,12 @@ OUT:
 
 
 IN:
-        XCHG
-        MVI M,0DBH              ; IN
-        INX H
-        MVI M,0H
-        INX H
-	MVI M,077H              ; MOV M,A
-        INX H
-        XCHG
+;;         XCHG
+;;         MVI M,0DBH              ; IN
+;;         INX H
+;;         MVI M,0H
+;;         INX H
+;; 	MVI M,077H              ; MOV M,A
+;;         INX H
+;;         XCHG
         RET
