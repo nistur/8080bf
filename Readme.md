@@ -7,11 +7,11 @@ challenge](https://hackaday.io/contest/18215-the-1kb-challenge) and
 wondered what fun things I could do with 1kb. As I'm relatively
 familiar with 8080 code, having written a
 [simulator](https://github.com/nistur/tlvm) for it, it seemed like the
-obvious choice. I do not know at this point whether I will be entering
+obvious choice.~~I do not know at this point whether I will be entering
 the competition as I will be required to build a board to demo this
 on. For now I will just aim to emulate the entry and possibly if I get
 the code running correctly, I will look into running it on actual
-hardware.
+hardware.~~ *I missed the deadline by a lot, but I kept working on this*
 
 So far my thoughts on the competition are:
 - 1kB is a ridiculously low limit, even for embedded systems nowadays,
@@ -23,11 +23,14 @@ Brainfuck)
 would the challenge be otherwise
 - Use the rest of the space to make something cool
 
-At this stage my ASM has some embedded brainfuck code, 'borrowed' from
+~~At this stage my ASM has some embedded brainfuck code, 'borrowed' from
 a [stackexchange
 post](https://codegolf.stackexchange.com/questions/55422/hello-world/68494#68494),
 but this is just placeholder as I obviously want it to do something
-more fun.
+more fun.~~ *The code golf Hello world is still provided in [the
+repository](src/hello.asm) however a simpler version from
+[esolangs](https://esolangs.org/wiki/Brainfuck) was used instead, as
+it didn't require negative cells*
 
 The compiler currently supports all 8 Brainfuck instructions, with
 input/output instructions mapping to IN 0 and OUT 0 respectively. This
@@ -57,3 +60,11 @@ the BF tape once it's compiled.
 copied back over the original code. Unfortunately this means that all
 the JMP locations have to be retargetted, which is why this is
 currently broken.
+
+At this stage, the max size for the bf code is still set at 256B. This
+is just because I haven't tested it with anything larger yet.
+
+One small note is, because of lack of space required to do 16 bit
+calculations, the tape size is currently (temporarily) limited to 256
+cells. The BF code can easily access past the bounds - there is no
+checking - however, there is no guarantee the cells will be zeroed.
