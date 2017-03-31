@@ -359,7 +359,7 @@ RUNBF:
         MVI     M,0FFH
 	
         LXI     H,TAPE+TAPELENGTH	;POINT TO THE END OF THE TAPE
-        MVI     A,TAPELENGTH		;RIGHT NOW WE ONLY SUPPORT TAPE UP TO 255
+        LXI     B,TAPELENGTH		;RIGHT NOW WE ONLY SUPPORT TAPE UP TO 255
 
 CLEARTAPE:	
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -367,11 +367,16 @@ CLEARTAPE:
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 	MVI     M,0H
         DCX     H
-        DCR     A
+	MOV	A,B
+	ORA	C
+        DCX     B
         JNZ     CLEARTAPE
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; RUN THE CODE                                                                 ;;
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-        JMP     BFSTART
- 
+;;         JMP     BFSTART		;THIS IS ACTUALLY SUPERFLUOUS AS BFSTART IS NEXT
+	NOP
+	NOP
+	NOP
+	NOP
